@@ -227,7 +227,11 @@ public class MainActivity extends Activity {
                         log("Read daily steps ok");
                         log(dataSet.toString());
                         TextView stepsTextView = findViewById(R.id.stepsTextView);
-                        stepsTextView.setText("Steps: " + dataSet.getDataPoints().get(0).getValue(Field.FIELD_STEPS));
+                        if (dataSet.getDataPoints().size() > 0) {
+                            stepsTextView.setText("Steps: " + dataSet.getDataPoints().get(0).getValue(Field.FIELD_STEPS));
+                        } else {
+                            stepsTextView.setText("No steps!");
+                        }
                     }
                 })
                 .addOnFailureListener(new OnFailureListener() {
