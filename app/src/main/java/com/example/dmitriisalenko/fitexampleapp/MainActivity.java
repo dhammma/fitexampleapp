@@ -10,18 +10,22 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.fitness.Fitness;
 import com.google.android.gms.fitness.FitnessOptions;
+import com.google.android.gms.fitness.data.DataSet;
 import com.google.android.gms.fitness.data.DataType;
 import com.google.android.gms.fitness.data.Subscription;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends Activity {
     // don't know why should we have this constant
@@ -186,5 +190,50 @@ public class MainActivity extends Activity {
                         log("Failure list subscriptions " + e.getMessage());
                     }
                 });
+    }
+
+    // BLOCK END
+
+    //
+    // BLOCK START: read daily steps
+    //
+    /**
+     * GoogleSignInOptionsExtension fitnessOptions =
+     *       FitnessOptions.builder()
+     *           .addDataType(DataType.TYPE_STEP_COUNT_DELTA, FitnessOptions.ACCESS_READ)
+     *           .build();
+     *
+     *     GoogleSignInAccount gsa = GoogleSignIn.getAccountForExtension(this, fitnessOptions);
+     *
+     * Task<DataSet> response =
+     *        Fitness.getHistoryClient(this, googleSigninAccount)
+     *               .readDailyTotalFromLocalDevice(TYPE_STEP_COUNT_DELTA);
+     *    DataSet totalSet = Tasks.await(response, 30, SECONDS);
+     *    if (totalResult.getStatus().isSuccess()) {
+     *      long total = totalSet.isEmpty()
+     *          ? 0
+     *          : totalSet.getDataPoints().get(0).getValue(FIELD_STEPS).asInt();
+     *    } else {
+     *      // handle failure
+     *    }
+     */
+    public void readDailySteps(View v) {
+        Task<DataSet> response = Fitness.getHistoryClient(this, GoogleSignIn.getLastSignedInAccount(this))
+                .readDailyTotalFromLocalDevice(DataType.TYPE_STEP_COUNT_DELTA)
+                .addOnSuccessListener(new OnSuccessListener<DataSet>() {
+                    @Override
+                    public void onSuccess(DataSet dataSet) {
+                        log("Read daily steps ok");
+                        log(dataSet.toString());
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        log("Read daily steps failure " + e.getMessage());
+                    }
+                });
+//        DataSet totalSet = Tasks.await(response, 30, TimeUnit.SECONDS);
+//        if (totalResult.get)
     }
 }
