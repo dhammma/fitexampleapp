@@ -15,10 +15,13 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.fitness.Fitness;
 import com.google.android.gms.fitness.FitnessOptions;
 import com.google.android.gms.fitness.data.DataType;
+import com.google.android.gms.fitness.data.Subscription;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+
+import java.util.List;
 
 public class MainActivity extends Activity {
     // don't know why should we have this constant
@@ -125,5 +128,63 @@ public class MainActivity extends Activity {
         } else {
             statusText.setText("Google Fit is not connected");
         }
+    }
+
+    //
+    // BLOCK START: subscriptions to fitness data
+    //
+    public void subscribeToFitnessData(View v) {
+        Fitness.getRecordingClient(this, GoogleSignIn.getLastSignedInAccount(this))
+                .subscribe(DataType.TYPE_STEP_COUNT_DELTA)
+                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        log("Subscribe to fitness data ok");
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        log("Subscribe to fitness data failure " + e.getMessage());
+                    }
+                });
+    }
+
+    public void unsubscribeFromFitnessData(View v) {
+        Fitness.getRecordingClient(this, GoogleSignIn.getLastSignedInAccount(this))
+                .unsubscribe(DataType.TYPE_STEP_COUNT_DELTA)
+                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        log("Unsubscribe from fitness data ok");
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        log("Subscribe to fitness data");
+                    }
+                });
+    }
+
+    public void listSubscriptionsToFitnessData(View v) {
+        Fitness.getRecordingClient(this, GoogleSignIn.getLastSignedInAccount(this))
+                .listSubscriptions(DataType.TYPE_STEP_COUNT_DELTA)
+                .addOnSuccessListener(new OnSuccessListener<List<Subscription>>() {
+                    @Override
+                    public void onSuccess(List<Subscription> subscriptions) {
+                        log("Subscription list ok");
+                        for (Subscription sc: subscriptions) {
+                            DataType dt = sc.getDataType();
+                            log("Subscription to data type " + dt.getName());
+                        }
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        log("Failure list subscriptions " + e.getMessage());
+                    }
+                });
     }
 }

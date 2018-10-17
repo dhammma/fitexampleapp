@@ -14,7 +14,7 @@
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.318" />
+        app:layout_constraintVertical_bias="0.118" />
 
     <TextView
         android:id="@+id/stepsTextView"
@@ -27,7 +27,7 @@
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.418" />
+        app:layout_constraintVertical_bias="0.218" />
 
     <TextView
         android:id="@+id/statusTextView"
@@ -42,7 +42,39 @@
         app:layout_constraintVertical_bias="0.700" />
 
     <Button
-        android:id="@+id/actionButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="subscribeToFitnessData"
+        android:text="Subscribe to Google Fit Data"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.350" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="listSubscriptionsToFitnessData"
+        android:text="List subscriptions to Google Fit Data"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.470" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="unsubscribeFromFitnessData"
+        android:text="Unsubscribe to Google Fit Data"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.590" />
+
+    <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:onClick="connectGoogleFit"
@@ -54,7 +86,6 @@
         app:layout_constraintVertical_bias="0.818" />
 
     <Button
-        android:id="@+id/actionButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:onClick="disconnectFit"
