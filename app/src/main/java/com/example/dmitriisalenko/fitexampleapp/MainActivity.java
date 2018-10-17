@@ -17,6 +17,7 @@ import com.google.android.gms.fitness.Fitness;
 import com.google.android.gms.fitness.FitnessOptions;
 import com.google.android.gms.fitness.data.DataSet;
 import com.google.android.gms.fitness.data.DataType;
+import com.google.android.gms.fitness.data.Field;
 import com.google.android.gms.fitness.data.Subscription;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
@@ -225,6 +226,8 @@ public class MainActivity extends Activity {
                     public void onSuccess(DataSet dataSet) {
                         log("Read daily steps ok");
                         log(dataSet.toString());
+                        TextView stepsTextView = findViewById(R.id.stepsTextView);
+                        stepsTextView.setText("Steps: " + dataSet.getDataPoints().get(0).getValue(Field.FIELD_STEPS));
                     }
                 })
                 .addOnFailureListener(new OnFailureListener() {
