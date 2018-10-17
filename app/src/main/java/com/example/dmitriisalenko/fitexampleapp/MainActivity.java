@@ -16,6 +16,8 @@ import com.google.android.gms.fitness.Fitness;
 import com.google.android.gms.fitness.FitnessOptions;
 import com.google.android.gms.fitness.data.DataType;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 
 public class MainActivity extends Activity {
@@ -61,7 +63,7 @@ public class MainActivity extends Activity {
     }
 
     public void connectGoogleFit(View button) {
-        if (processingConnect) {
+        if (processingConnect || hasPermissions()) {
             return;
         }
         processingConnect = true;
@@ -73,7 +75,7 @@ public class MainActivity extends Activity {
     }
 
     public void disconnectFit(View button) {
-        if (processingConnect) {
+        if (processingConnect || !hasPermissions()) {
             return;
         }
         processingConnect = true;
@@ -93,6 +95,20 @@ public class MainActivity extends Activity {
                 GoogleSignInClient client = GoogleSignIn.getClient(getApplicationContext(), signInOptions);
                 client.revokeAccess();
                 render();
+            }
+        });
+
+        task.addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                log("Disconnect failure " + e.getMessage());
+            }
+        });
+
+        task.addOnSuccessListener(new OnSuccessListener() {
+            @Override
+            public void onSuccess(Object o) {
+                log("Disconnect ok");
             }
         });
     }
