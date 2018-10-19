@@ -10,21 +10,25 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.fitness.Fitness;
 import com.google.android.gms.fitness.FitnessOptions;
+import com.google.android.gms.fitness.data.DataPoint;
 import com.google.android.gms.fitness.data.DataSet;
 import com.google.android.gms.fitness.data.DataType;
 import com.google.android.gms.fitness.data.Field;
-import com.google.android.gms.fitness.data.Subscription;
+import com.google.android.gms.fitness.request.DataReadRequest;
+import com.google.android.gms.fitness.result.DataReadResponse;
+import com.google.android.gms.fitness.result.DataReadResult;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.Tasks;
 
+import java.text.DateFormat;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -32,6 +36,7 @@ public class MainActivity extends Activity {
     // don't know why should we have this constant
     private static int GOOGLE_FIT_PERMISSIONS_REQUEST_CODE = 11235813;
     private boolean processingConnect = false;
+    private List<DataSet> dataSets;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,6 +53,8 @@ public class MainActivity extends Activity {
                 TextView statusTextView = findViewById(R.id.statusTextView);
                 statusTextView.setText("Google Fit is connected");
                 log("Connected ok");
+                subscribeToFitnessData();
+                readStepsData();
             } else {
                 log("Connected is not ok");
             }
@@ -91,10 +98,6 @@ public class MainActivity extends Activity {
                 .disableFit();
 
 
-//        GoogleSignInOptions signInOptions = (new GoogleSignInOptions.Builder()).addExtension(getFitnessOptions()).build();
-//        GoogleSignInClient client = GoogleSignIn.getClient(getApplicationContext(), signInOptions);
-//        client.revokeAccess();
-
         task.addOnCompleteListener(new OnCompleteListener() {
             @Override
             public void onComplete(@NonNull Task task) {
@@ -127,18 +130,53 @@ public class MainActivity extends Activity {
 
     public void render() {
         TextView statusText = findViewById(R.id.statusTextView);
+        TextView stepsText = findViewById(R.id.stepsTextView);
+        Button connectButton = findViewById(R.id.connectButton);
+        Button disconnectButton = findViewById(R.id.disconnectButton);
 
+        statusText.setVisibility(View.VISIBLE);
         if (hasPermissions()) {
-            statusText.setText("Google Fit is connected");
+            connectButton.setVisibility(View.GONE);
+            disconnectButton.setVisibility(View.VISIBLE);
+            statusText.setText(R.string.google_fit_connected);
+
+            if (dataSets != null && dataSets.size() > 0) {
+                stepsText.setVisibility(View.VISIBLE);
+                DateFormat dateFormat = DateFormat.getTimeInstance();
+                String results = "";
+                for (DataSet ds : dataSets) {
+                    if (ds.getDataPoints().size() == 0) {
+                        continue;
+                    }
+                    for (DataPoint dp : ds.getDataPoints()) {
+                        String type = dp.getDataType().getName();
+                        String start = dateFormat.format(dp.getStartTime(TimeUnit.MILLISECONDS));
+                        String end = dateFormat.format(dp.getEndTime(TimeUnit.MILLISECONDS));
+                        String steps = dp.getValue(Field.FIELD_STEPS).toString();
+
+                        results += start + " " + end + " " + type + "\n" + steps + "\n";
+                    }
+
+                    results += "\nData set ends\n\n";
+                }
+                log("read results " + results);
+                stepsText.setText(results);
+            } else {
+                log("no data");
+                stepsText.setVisibility(View.GONE);
+            }
         } else {
-            statusText.setText("Google Fit is not connected");
+            connectButton.setVisibility(View.GONE);
+            stepsText.setVisibility(View.GONE);
+            disconnectButton.setVisibility(View.GONE);
+            statusText.setText(R.string.google_fit_disconnected);
         }
     }
 
     //
     // BLOCK START: subscriptions to fitness data
     //
-    public void subscribeToFitnessData(View v) {
+    public void subscribeToFitnessData() {
         Fitness.getRecordingClient(this, GoogleSignIn.getLastSignedInAccount(this))
                 .subscribe(DataType.TYPE_STEP_COUNT_DELTA)
                 .addOnSuccessListener(new OnSuccessListener<Void>() {
@@ -155,92 +193,51 @@ public class MainActivity extends Activity {
                 });
     }
 
-    public void unsubscribeFromFitnessData(View v) {
-        Fitness.getRecordingClient(this, GoogleSignIn.getLastSignedInAccount(this))
-                .unsubscribe(DataType.TYPE_STEP_COUNT_DELTA)
-                .addOnSuccessListener(new OnSuccessListener<Void>() {
-                    @Override
-                    public void onSuccess(Void aVoid) {
-                        log("Unsubscribe from fitness data ok");
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        log("Subscribe to fitness data");
-                    }
-                });
-    }
-
-    public void listSubscriptionsToFitnessData(View v) {
-        Fitness.getRecordingClient(this, GoogleSignIn.getLastSignedInAccount(this))
-                .listSubscriptions(DataType.TYPE_STEP_COUNT_DELTA)
-                .addOnSuccessListener(new OnSuccessListener<List<Subscription>>() {
-                    @Override
-                    public void onSuccess(List<Subscription> subscriptions) {
-                        log("Subscription list ok");
-                        for (Subscription sc: subscriptions) {
-                            DataType dt = sc.getDataType();
-                            log("Subscription to data type " + dt.getName());
-                        }
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        log("Failure list subscriptions " + e.getMessage());
-                    }
-                });
-    }
-
     // BLOCK END
 
     //
-    // BLOCK START: read daily steps
+    // BLOCK START: read steps data
     //
-    /**
-     * GoogleSignInOptionsExtension fitnessOptions =
-     *       FitnessOptions.builder()
-     *           .addDataType(DataType.TYPE_STEP_COUNT_DELTA, FitnessOptions.ACCESS_READ)
-     *           .build();
-     *
-     *     GoogleSignInAccount gsa = GoogleSignIn.getAccountForExtension(this, fitnessOptions);
-     *
-     * Task<DataSet> response =
-     *        Fitness.getHistoryClient(this, googleSigninAccount)
-     *               .readDailyTotalFromLocalDevice(TYPE_STEP_COUNT_DELTA);
-     *    DataSet totalSet = Tasks.await(response, 30, SECONDS);
-     *    if (totalResult.getStatus().isSuccess()) {
-     *      long total = totalSet.isEmpty()
-     *          ? 0
-     *          : totalSet.getDataPoints().get(0).getValue(FIELD_STEPS).asInt();
-     *    } else {
-     *      // handle failure
-     *    }
-     */
-    public void readDailySteps(View v) {
-        Task<DataSet> response = Fitness.getHistoryClient(this, GoogleSignIn.getLastSignedInAccount(this))
-                .readDailyTotalFromLocalDevice(DataType.TYPE_STEP_COUNT_DELTA)
-                .addOnSuccessListener(new OnSuccessListener<DataSet>() {
-                    @Override
-                    public void onSuccess(DataSet dataSet) {
-                        log("Read daily steps ok");
-                        log(dataSet.toString());
-                        TextView stepsTextView = findViewById(R.id.stepsTextView);
-                        if (dataSet.getDataPoints().size() > 0) {
-                            stepsTextView.setText("Steps: " + dataSet.getDataPoints().get(0).getValue(Field.FIELD_STEPS));
-                        } else {
-                            stepsTextView.setText("No steps!");
-                        }
-                    }
-                })
+
+    public void readStepsData() {
+        if (!hasPermissions()) {
+            return; // safe method
+        }
+
+        // Setting a start and end date using a range of 10 days before this moment.
+        Calendar calendar = Calendar.getInstance();
+        Date now = new Date();
+        calendar.setTime(now);
+        long endTime = calendar.getTimeInMillis();
+        calendar.add(Calendar.DAY_OF_YEAR, -10);
+        long startTime = calendar.getTimeInMillis();
+
+        DataReadRequest request = new DataReadRequest.Builder()
+                .aggregate(DataType.TYPE_STEP_COUNT_DELTA, DataType.AGGREGATE_STEP_COUNT_DELTA)
+                .bucketByTime(1, TimeUnit.DAYS)
+                .setTimeRange(startTime, endTime, TimeUnit.MILLISECONDS)
+                .build();
+
+        Task<DataReadResponse> response = Fitness
+                .getHistoryClient(this, GoogleSignIn.getLastSignedInAccount(this))
+                .readData(request)
                 .addOnFailureListener(new OnFailureListener() {
                     @Override
                     public void onFailure(@NonNull Exception e) {
-                        log("Read daily steps failure " + e.getMessage());
+                        log("read steps failure " + e.getMessage());
+                    }
+                })
+                .addOnSuccessListener(new OnSuccessListener<DataReadResponse>() {
+                    @Override
+                    public void onSuccess(DataReadResponse dataReadResponse) {
+                        log("read steps success");
+                        dataSets = dataReadResponse.getDataSets();
+                        render();
                     }
                 });
-//        DataSet totalSet = Tasks.await(response, 30, TimeUnit.SECONDS);
-//        if (totalResult.get)
+    }
+
+    public void onReadClick(View v) {
+        readStepsData();
     }
 }
