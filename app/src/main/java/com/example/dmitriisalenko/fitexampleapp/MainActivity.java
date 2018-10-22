@@ -20,11 +20,12 @@ import com.google.android.gms.fitness.data.DataType;
 import com.google.android.gms.fitness.data.Field;
 import com.google.android.gms.fitness.request.DataReadRequest;
 import com.google.android.gms.fitness.result.DataReadResponse;
-import com.google.android.gms.fitness.result.DataReadResult;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+
+import org.w3c.dom.Text;
 
 import java.text.DateFormat;
 import java.util.Calendar;
@@ -36,7 +37,9 @@ public class MainActivity extends Activity {
     // don't know why should we have this constant
     private static int GOOGLE_FIT_PERMISSIONS_REQUEST_CODE = 11235813;
     private boolean processingConnect = false;
-    private List<DataSet> dataSets;
+    private List<DataSet> weeklyDataSets;
+    private DataSet dailyDataSet;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -131,20 +134,24 @@ public class MainActivity extends Activity {
     public void render() {
         TextView statusText = findViewById(R.id.statusTextView);
         TextView stepsText = findViewById(R.id.stepsTextView);
+        TextView noDailyStepsText = findViewById(R.id.noDailySteps);
+        TextView dailyStepsText = findViewById(R.id.dailyStepsTextView);
         Button connectButton = findViewById(R.id.connectButton);
         Button disconnectButton = findViewById(R.id.disconnectButton);
+        View dailyStepsView = findViewById(R.id.dailySteps);
 
         statusText.setVisibility(View.VISIBLE);
         if (hasPermissions()) {
+            dailyStepsView.setVisibility(View.VISIBLE);
             connectButton.setVisibility(View.GONE);
             disconnectButton.setVisibility(View.VISIBLE);
             statusText.setText(R.string.google_fit_connected);
 
-            if (dataSets != null && dataSets.size() > 0) {
+            if (weeklyDataSets != null && weeklyDataSets.size() > 0) {
                 stepsText.setVisibility(View.VISIBLE);
                 DateFormat dateFormat = DateFormat.getTimeInstance();
                 String results = "";
-                for (DataSet ds : dataSets) {
+                for (DataSet ds : weeklyDataSets) {
                     if (ds.getDataPoints().size() == 0) {
                         continue;
                     }
@@ -165,7 +172,17 @@ public class MainActivity extends Activity {
                 log("no data");
                 stepsText.setVisibility(View.GONE);
             }
+
+            if (dailyDataSet != null && dailyDataSet.getDataPoints().size() > 0) {
+                noDailyStepsText.setVisibility(View.GONE);
+                dailyStepsText.setVisibility(View.VISIBLE);
+                dailyStepsText.setText(dailyDataSet.getDataPoints().get(0).getValue(Field.FIELD_STEPS).toString());
+            } else {
+                noDailyStepsText.setVisibility(View.VISIBLE);
+                dailyStepsText.setVisibility(View.GONE);
+            }
         } else {
+            dailyStepsView.setVisibility(View.GONE);
             connectButton.setVisibility(View.GONE);
             stepsText.setVisibility(View.GONE);
             disconnectButton.setVisibility(View.GONE);
@@ -200,6 +217,11 @@ public class MainActivity extends Activity {
     //
 
     public void readStepsData() {
+        readWeeklyStepsData();
+        readDailyStepsData();
+    }
+
+    public void readWeeklyStepsData() {
         if (!hasPermissions()) {
             return; // safe method
         }
@@ -231,8 +253,27 @@ public class MainActivity extends Activity {
                     @Override
                     public void onSuccess(DataReadResponse dataReadResponse) {
                         log("read steps success");
-                        dataSets = dataReadResponse.getDataSets();
+                        weeklyDataSets = dataReadResponse.getDataSets();
                         render();
+                    }
+                });
+    }
+
+    public void readDailyStepsData() {
+        Fitness.getHistoryClient(this, GoogleSignIn.getLastSignedInAccount(this))
+                .readDailyTotalFromLocalDevice(DataType.TYPE_STEP_COUNT_DELTA)
+                .addOnSuccessListener(new OnSuccessListener<DataSet>() {
+                    @Override
+                    public void onSuccess(DataSet dataSet) {
+                        log("Read daily steps ok");
+                        log(dataSet.toString());
+                        dailyDataSet = dataSet;
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        log("Read daily steps failure " + e.getMessage());
                     }
                 });
     }

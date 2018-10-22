@@ -8,12 +8,41 @@
     tools:context=".MainActivity">
 
     <TextView
-        android:visibility="gone"
         android:id="@+id/stepsTextView"
         android:layout_below="@+id/controls"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Steps: 0"/>
+
+    <LinearLayout
+        android:id="@+id/dailySteps"
+        android:orientation="vertical"
+        android:layout_above="@id/controls"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <TextView
+            android:layout_gravity="center_horizontal"
+            android:textSize="20sp"
+            android:text="@string/daily_steps"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+        <TextView
+            android:visibility="gone"
+            android:id="@+id/noDailySteps"
+            android:textStyle="italic"
+            android:text="@string/no_steps_data"
+            android:layout_gravity="center_horizontal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+        <TextView
+            android:id="@+id/dailyStepsTextView"
+            android:textStyle="bold"
+            android:textSize="28sp"
+            android:text="0"
+            android:layout_gravity="center_horizontal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+    </LinearLayout>
 
     <LinearLayout
         android:id="@+id/controls"

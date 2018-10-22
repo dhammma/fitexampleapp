@@ -5,4 +5,6 @@
     <string name="google_fit_connected">Google Fit is connected</string>
     <string name="google_fit_disconnected">Google Fit is disconnected</string>
     <string name="read_steps_data">Read Steps Data</string>
+    <string name="no_steps_data">No steps data</string>
+    <string name="daily_steps">Daily Steps</string>
 </resources>
