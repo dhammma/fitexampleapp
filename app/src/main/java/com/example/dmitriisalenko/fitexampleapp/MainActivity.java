@@ -133,6 +133,7 @@ public class MainActivity extends Activity {
         Button readDataButton = findViewById(R.id.readData);
         Button connectButton = findViewById(R.id.connectButton);
         Button disconnectButton = findViewById(R.id.disconnectButton);
+        View weeklyStepsView = findViewById(R.id.weeklySteps);
 
         statusText.setVisibility(View.VISIBLE);
         if (hasPermissions()) {
@@ -142,6 +143,7 @@ public class MainActivity extends Activity {
             statusText.setText(R.string.google_fit_connected);
 
             if (weeklyResponse != null) {
+                weeklyStepsView.setVisibility(View.VISIBLE);
                 DateFormat dateFormat = DateFormat.getDateInstance();
 
                 for (int i = 0; i < 7; i++) {
@@ -162,8 +164,11 @@ public class MainActivity extends Activity {
                         dailyStepsValueText.setVisibility(View.GONE);
                     }
                 }
+            } else {
+                weeklyStepsView.setVisibility(View.GONE);
             }
         } else {
+            weeklyStepsView.setVisibility(View.GONE);
             readDataButton.setVisibility(View.GONE);
             connectButton.setVisibility(View.VISIBLE);
             disconnectButton.setVisibility(View.GONE);
@@ -199,7 +204,6 @@ public class MainActivity extends Activity {
 
     public void readStepsData() {
         readWeeklyStepsData();
-        readDailyStepsData();
     }
 
     public void readWeeklyStepsData() {
@@ -239,25 +243,6 @@ public class MainActivity extends Activity {
 //                        log(dataReadResponse.getBuckets().toString());
 //                        weeklyDataSets = dataReadResponse.getDataSets();
                         render();
-                    }
-                });
-    }
-
-    public void readDailyStepsData() {
-        Fitness.getHistoryClient(this, GoogleSignIn.getLastSignedInAccount(this))
-                .readDailyTotalFromLocalDevice(DataType.TYPE_STEP_COUNT_DELTA)
-                .addOnSuccessListener(new OnSuccessListener<DataSet>() {
-                    @Override
-                    public void onSuccess(DataSet dataSet) {
-                        log("Read daily steps ok");
-                        log(dataSet.toString());
-                        dailyDataSet = dataSet;
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        log("Read daily steps failure " + e.getMessage());
                     }
                 });
     }
