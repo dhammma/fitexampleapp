@@ -14,6 +14,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.fitness.Fitness;
 import com.google.android.gms.fitness.FitnessOptions;
+import com.google.android.gms.fitness.data.Bucket;
 import com.google.android.gms.fitness.data.DataPoint;
 import com.google.android.gms.fitness.data.DataSet;
 import com.google.android.gms.fitness.data.DataType;
@@ -38,6 +39,7 @@ public class MainActivity extends Activity {
     private static int GOOGLE_FIT_PERMISSIONS_REQUEST_CODE = 11235813;
     private boolean processingConnect = false;
     private List<DataSet> weeklyDataSets;
+    private DataReadResponse weeklyResponse;
     private DataSet dailyDataSet;
 
 
@@ -136,42 +138,68 @@ public class MainActivity extends Activity {
         TextView stepsText = findViewById(R.id.stepsTextView);
         TextView noDailyStepsText = findViewById(R.id.noDailySteps);
         TextView dailyStepsText = findViewById(R.id.dailyStepsTextView);
+        Button readDataButton = findViewById(R.id.readData);
         Button connectButton = findViewById(R.id.connectButton);
         Button disconnectButton = findViewById(R.id.disconnectButton);
         View dailyStepsView = findViewById(R.id.dailySteps);
 
         statusText.setVisibility(View.VISIBLE);
         if (hasPermissions()) {
+            readDataButton.setVisibility(View.VISIBLE);
             dailyStepsView.setVisibility(View.VISIBLE);
             connectButton.setVisibility(View.GONE);
             disconnectButton.setVisibility(View.VISIBLE);
             statusText.setText(R.string.google_fit_connected);
 
-            if (weeklyDataSets != null && weeklyDataSets.size() > 0) {
-                stepsText.setVisibility(View.VISIBLE);
+            if (weeklyResponse != null) {
                 DateFormat dateFormat = DateFormat.getTimeInstance();
                 String results = "";
-                for (DataSet ds : weeklyDataSets) {
-                    if (ds.getDataPoints().size() == 0) {
-                        continue;
-                    }
-                    for (DataPoint dp : ds.getDataPoints()) {
+                for (Bucket b : weeklyResponse.getBuckets()) {
+                    for (DataSet ds : b.getDataSets()) {
+                        for (DataPoint dp: ds.getDataPoints()) {
                         String type = dp.getDataType().getName();
                         String start = dateFormat.format(dp.getStartTime(TimeUnit.MILLISECONDS));
                         String end = dateFormat.format(dp.getEndTime(TimeUnit.MILLISECONDS));
                         String steps = dp.getValue(Field.FIELD_STEPS).toString();
 
                         results += start + " " + end + " " + type + "\n" + steps + "\n";
+                        }
                     }
-
-                    results += "\nData set ends\n\n";
                 }
-                log("read results " + results);
                 stepsText.setText(results);
-            } else {
-                log("no data");
-                stepsText.setVisibility(View.GONE);
+                log(results);
             }
+
+//           x if (weeklyDataSets != null) {
+//                log("weekly datasets " + weeklyDataSets.toString());
+//            }
+//
+//            if (weeklyDataSets != null && weeklyDataSets.size() > 0) {
+//                stepsText.setVisibility(View.VISIBLE);
+//                DateFormat dateFormat = DateFormat.getTimeInstance();
+//                String results = "";
+//                for (DataSet ds : weeklyDataSets) {
+//                    log("ds " + ds.toString());
+//                    if (ds.getDataPoints().size() == 0) {
+//                        continue;
+//                    }
+//                    for (DataPoint dp : ds.getDataPoints()) {
+//                        String type = dp.getDataType().getName();
+//                        String start = dateFormat.format(dp.getStartTime(TimeUnit.MILLISECONDS));
+//                        String end = dateFormat.format(dp.getEndTime(TimeUnit.MILLISECONDS));
+//                        String steps = dp.getValue(Field.FIELD_STEPS).toString();
+//
+//                        results += start + " " + end + " " + type + "\n" + steps + "\n";
+//                    }
+//
+//                    results += "\nData set ends\n\n";
+//                }
+//                log("read results " + results);
+//                stepsText.setText(results);
+//            } else {
+//                log("no data");
+//                stepsText.setVisibility(View.GONE);
+//            }
 
             if (dailyDataSet != null && dailyDataSet.getDataPoints().size() > 0) {
                 noDailyStepsText.setVisibility(View.GONE);
@@ -182,8 +210,9 @@ public class MainActivity extends Activity {
                 dailyStepsText.setVisibility(View.GONE);
             }
         } else {
+            readDataButton.setVisibility(View.GONE);
             dailyStepsView.setVisibility(View.GONE);
-            connectButton.setVisibility(View.GONE);
+            connectButton.setVisibility(View.VISIBLE);
             stepsText.setVisibility(View.GONE);
             disconnectButton.setVisibility(View.GONE);
             statusText.setText(R.string.google_fit_disconnected);
@@ -231,7 +260,7 @@ public class MainActivity extends Activity {
         Date now = new Date();
         calendar.setTime(now);
         long endTime = calendar.getTimeInMillis();
-        calendar.add(Calendar.DAY_OF_YEAR, -10);
+        calendar.add(Calendar.WEEK_OF_YEAR, -1);
         long startTime = calendar.getTimeInMillis();
 
         DataReadRequest request = new DataReadRequest.Builder()
@@ -253,7 +282,10 @@ public class MainActivity extends Activity {
                     @Override
                     public void onSuccess(DataReadResponse dataReadResponse) {
                         log("read steps success");
-                        weeklyDataSets = dataReadResponse.getDataSets();
+                        weeklyResponse = dataReadResponse;
+//                        log(dataReadResponse.toString());
+//                        log(dataReadResponse.getBuckets().toString());
+//                        weeklyDataSets = dataReadResponse.getDataSets();
                         render();
                     }
                 });
